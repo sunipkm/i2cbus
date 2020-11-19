@@ -29,7 +29,7 @@ int i2cbus_open(i2cbus *dev, int id, int addr)
         return -1;
     }
     // check 3: addr valid range
-    if (addr < 8 || addr & 0x7c)
+    if (addr < 8)
     {
         fprintf(stderr, "%s: Address 0x%02x is invalid\n", __func__, addr);
         return -1;
@@ -38,7 +38,7 @@ int i2cbus_open(i2cbus *dev, int id, int addr)
     // Try to open the file descriptor
     // step 1: Create file name
     char fname[256];
-    if (snprintf(fname, 256, "/dev/i2c%d", id) < 0)
+    if (snprintf(fname, 256, "/dev/i2c-%d", id) < 0)
     {
         fprintf(stderr, "%s: Failed to generate device filename using snprintf. FATAL Error!\n", __func__);
         return -1;
