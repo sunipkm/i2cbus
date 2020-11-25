@@ -46,7 +46,7 @@ int i2cbus_open(i2cbus *dev, int id, int addr)
     if ((dev->fd = open(fname, O_RDWR)) < 0)
     {
         fprintf(stderr, "%s: Failed to open %s. Error %d\n", __func__, fname, dev->fd);
-        return dev->fd; 
+        return dev->fd;
     }
     int status = 0;
     if ((status = ioctl(dev->fd, I2C_SLAVE, addr)) < 0)
@@ -56,9 +56,9 @@ int i2cbus_open(i2cbus *dev, int id, int addr)
         return status;
     }
     // if we are here, then everything was successful
-    dev->id = id; // assign device id
+    dev->id = id;                      // assign device id
     dev->lock = &(__i2cbus_locks[id]); // assign lock
-    dev->ctx = -1; // context has been cleared, it has to be set by the caller
+    dev->ctx = -1;                     // context has been cleared, it has to be set by the caller
     return dev->fd;
 }
 
@@ -83,8 +83,8 @@ int i2cbus_close(i2cbus *dev)
     return -1;
 }
 
-#define likely(x)      __builtin_expect(!!(x), 1)
-#define unlikely(x)    __builtin_expect(!!(x), 0)
+#define likely(x) __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
 
 int i2cbus_write(i2cbus *dev, const void *buf, ssize_t len)
 {
@@ -116,7 +116,7 @@ int i2cbus_write(i2cbus *dev, const void *buf, ssize_t len)
     }
     if (locked)
         pthread_mutex_unlock(dev->lock);
-    return status;   
+    return status;
 }
 
 int i2cbus_read(i2cbus *dev, void *buf, ssize_t len)
@@ -149,7 +149,58 @@ int i2cbus_read(i2cbus *dev, void *buf, ssize_t len)
     }
     if (locked)
         pthread_mutex_unlock(dev->lock);
-    return status;   
+    return status;
+}
+
+int i2cbus_xfer(i2cbus *dev,
+                void *outbuf, ssize_t outlen,
+                void *inbuf, ssize_t inlen,
+                unsigned long timeout_usec)
+{
+    // usual checks
+    if (unlikely(dev == NULL || dev->fd < 0))
+    {
+        fprintf(stderr, "%s: %s %p, %d\n", __func__, "Invalid device pointer or file descriptor", dev, dev->fd);
+        return -1;
+    }
+    // check if it belongs to a context
+    int locked = 1;
+    int status = 0;
+    if (!(dev->ctx < I2CBUS_CTX_0 || dev->ctx > I2CBUS_CTX_9))
+    {
+        status = pthread_mutex_trylock(dev->lock);
+        // valid context found, check if there is a lock
+        if (status == EBUSY || status == EINVAL)
+            locked = 0;
+    }
+    // otherwise try to lock and block on it
+    else
+        status = pthread_mutex_lock(dev->lock);
+    if (status == EDEADLK) // we already own the mutex
+        locked = 0;
+    if (likely(outlen > 0))
+    {
+        status = write(dev->fd, outbuf, outlen);
+        if (status != outlen)
+        {
+            fprintf(stderr, "%s: Failed to write %d bytes, wrote %d bytes\n", __func__, outlen, status);
+            goto i2cbus_xfer_end;
+        }
+    }
+    if (timeout_usec > 0)
+        usleep(timeout_usec);
+    if (likely(inlen > 0))
+    {
+        status = write(dev->fd, inbuf, inlen);
+        if (status != inlen)
+        {
+            fprintf(stderr, "%s: Failed to read %d bytes, read %d bytes\n", __func__, inlen, status);
+        }
+    }
+i2cbus_xfer_end:
+    if (locked)
+        pthread_mutex_unlock(dev->lock);
+    return status;
 }
 
 int i2cbus_lock(i2cbus *dev)

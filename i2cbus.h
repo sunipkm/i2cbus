@@ -27,9 +27,11 @@ pthread_mutex_t __i2cbus_locks[__I2CBUS_MAX_NUM];
  * @brief Set of the contexts for the lock
  * 
  */
-int __i2cbus_lock_ctx[__I2CBUS_MAX_NUM] = {0, };
+int __i2cbus_lock_ctx[__I2CBUS_MAX_NUM] = {
+    0,
+};
 #endif
-typedef enum 
+typedef enum
 {
     I2CBUS_CTX_0 = 0xa,
     I2CBUS_CTX_1,
@@ -53,7 +55,7 @@ typedef struct
                            /// parts of the same module and require time-sensitive access to
                            /// the i2c bus. In that case even if the mutex is locked for the
                            /// bus, the system will proceed to provide read/write access for
-                           /// devices sharing the same context. 
+                           /// devices sharing the same context.
                            /// Note: Context has to be set AFTER i2cbus_init() has been called.
 } i2cbus;
 /**
@@ -109,6 +111,24 @@ int i2cbus_write(i2cbus *dev, const void *buf, ssize_t len);
  * @return int Length of bytes read on success, -1 on failure
  */
 int i2cbus_read(i2cbus *dev, void *buf, ssize_t len);
+/**
+ * @brief Function to do a write, and get the reply in one operation
+ * in order to avoid read/write mangling with multiple threads 
+ * accessing the bus. Avoid using this function if you have read or
+ * write buffer lengths zero.
+ * 
+ * @param dev i2c device descriptor
+ * @param outbuf Pointer to byte array to write (MSB first)
+ * @param outlen Length of output byte array
+ * @param inbuf Pointer to byte array to read to (MSB first)
+ * @param inlen Length of input byte array
+ * @param timeout_usec Timeout between read and write (in microseconds)
+ * @return int Length of bytes read on success, -1 on failure
+ */
+int i2cbus_xfer(i2cbus *dev,
+                void *outbuf, ssize_t outlen,
+                void *inbuf, ssize_t inlen,
+                unsigned long timeout_usec);
 /**
  * @brief Lock the mutex for the I2C bus ID. Use this only if you 
  * need continuous access to a bus for time sensitive reads. DO NOT
