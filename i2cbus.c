@@ -210,41 +210,35 @@ int i2cbus_xfer(i2cbus *dev,
         status = pthread_mutex_lock(dev->lock);
     if (status == EDEADLK) // we already own the mutex
         locked = 0;
-    if (likely(outlen > 0))
-    {
 #ifdef I2C_DEBUG
-        eprintf("%s: Sending %d bytes ->\n", __func__, outlen);
-        for (int i = 0; i < outlen; i++)
-        {
-            eprintf("[0x%02x]", ((unsigned char *)outbuf)[i]);
-        }
-        eprintf("\n");
+    eprintf("%s: Sending %d bytes ->\n", __func__, outlen);
+    for (int i = 0; i < outlen; i++)
+    {
+        eprintf("[0x%02x]", ((unsigned char *)outbuf)[i]);
+    }
+    eprintf("\n");
 #endif
-        status = write(dev->fd, outbuf, outlen);
-        if (status != outlen)
-        {
-            fprintf(stderr, "%s: Failed to write %d bytes, wrote %d bytes\n", __func__, outlen, status);
-            goto i2cbus_xfer_end;
-        }
+    status = write(dev->fd, outbuf, outlen);
+    if (status != outlen)
+    {
+        fprintf(stderr, "%s: Failed to write %d bytes, wrote %d bytes\n", __func__, outlen, status);
+        goto i2cbus_xfer_end;
     }
     if (timeout_usec > 0)
         usleep(timeout_usec);
-    if (likely(inlen > 0))
+    status = read(dev->fd, inbuf, inlen);
+    if (status != inlen)
     {
-        status = read(dev->fd, inbuf, inlen);
-        if (status != inlen)
-        {
-            fprintf(stderr, "%s: Failed to read %d bytes, read %d bytes\n", __func__, inlen, status);
-        }
-#ifdef I2C_DEBUG
-        eprintf("%s: Receiving %d bytes ->\n", __func__, inlen);
-        for (int i = 0; i < inlen; i++)
-        {
-            eprintf("[0x%02x]", ((unsigned char *)inbuf)[i]);
-        }
-        eprintf("\n");
-#endif
+        fprintf(stderr, "%s: Failed to read %d bytes, read %d bytes\n", __func__, inlen, status);
     }
+#ifdef I2C_DEBUG
+    eprintf("%s: Receiving %d bytes ->\n", __func__, inlen);
+    for (int i = 0; i < inlen; i++)
+    {
+        eprintf("[0x%02x]", ((unsigned char *)inbuf)[i]);
+    }
+    eprintf("\n");
+#endif
 i2cbus_xfer_end:
     if (locked)
         pthread_mutex_unlock(dev->lock);
