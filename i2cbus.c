@@ -201,6 +201,9 @@ int i2cbus_xfer(i2cbus *dev,
         // valid context found, check if there is a lock
         if (status == EBUSY || status == EINVAL)
             locked = 0;
+#ifdef I2C_DEBUG
+        eprintf("%s: Contex found, cts: 0x%02x, status: %d, locked: %d\n", __func__, dev->ctx, status, locked);
+#endif
     }
     // otherwise try to lock and block on it
     else
@@ -209,6 +212,14 @@ int i2cbus_xfer(i2cbus *dev,
         locked = 0;
     if (likely(outlen > 0))
     {
+#ifdef I2C_DEBUG
+        eprintf("%s: Sending %d bytes ->\n", __func__, outlen);
+        for (int i = 0; i < outlen; i++)
+        {
+            eprintf("[0x%02x]", ((unsigned char *)outbuf)[i]);
+        }
+        eprintf("\n");
+#endif
         status = write(dev->fd, outbuf, outlen);
         if (status != outlen)
         {
@@ -220,11 +231,19 @@ int i2cbus_xfer(i2cbus *dev,
         usleep(timeout_usec);
     if (likely(inlen > 0))
     {
-        status = write(dev->fd, inbuf, inlen);
+        status = read(dev->fd, inbuf, inlen);
         if (status != inlen)
         {
             fprintf(stderr, "%s: Failed to read %d bytes, read %d bytes\n", __func__, inlen, status);
         }
+#ifdef I2C_DEBUG
+        eprintf("%s: Receiving %d bytes ->\n", __func__, inlen);
+        for (int i = 0; i < inlen; i++)
+        {
+            eprintf("[0x%02x]", ((unsigned char *)inbuf)[i]);
+        }
+        eprintf("\n");
+#endif
     }
 i2cbus_xfer_end:
     if (locked)
