@@ -14,8 +14,24 @@
 #include "i2cbus.h"
 #undef __I2CBUS_INTERNAL
 
+#define eprintf(...) fprintf(stderr, __VA_ARGS__)
+static int __i2clock_initd = 0; /// Indicate that the I2C bus has not been initialized
+
 int i2cbus_open(i2cbus *dev, int id, int addr)
 {
+    if (__i2clock_initd++ == 0) // only do it when the lock init is zero
+    {
+        for (int i = 0; i < __I2CBUS_MAX_NUM; i++)
+        {
+            int ret = pthread_mutex_init(&(__i2cbus_lock_ctx[i]), NULL);
+            if (ret != 0)
+            {
+                eprintf("%s: Failed to init mutex %d, ", __func__, i);
+                perror("mutex init");
+                return -1;
+            }
+        }
+    }
     // check 1: memory
     if (dev == NULL)
     {
@@ -64,6 +80,19 @@ int i2cbus_open(i2cbus *dev, int id, int addr)
 
 int i2cbus_close(i2cbus *dev)
 {
+    if (--__i2clock_initd == 0) // only do it when the lock init is zero
+    {
+        for (int i = 0; i < __I2CBUS_MAX_NUM; i++)
+        {
+            int ret = pthread_mutex_destroy(&(__i2cbus_lock_ctx[i]));
+            if (ret != 0)
+            {
+                eprintf("%s: Failed to destroy mutex %d, ", __func__, i);
+                perror("mutex destroy");
+                return -1;
+            }
+        }
+    }
     if (dev != NULL)
     {
         if (dev->fd > 0)
