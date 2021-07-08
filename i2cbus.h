@@ -10,6 +10,9 @@
  */
 #ifndef __I2CBUS_H
 #define __I2CBUS_H
+#ifdef __cplusplus 
+extern "C" {
+#endif
 #include <stdio.h>
 #include <pthread.h>
 /**
@@ -154,4 +157,7 @@ int i2cbus_trylock(i2cbus *dev);
  * @return int pthread_mutex_unlock()
  */
 int i2cbus_unlock(i2cbus *dev);
+#ifdef __cplusplus 
+}
+#endif
 #endif
