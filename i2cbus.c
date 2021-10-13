@@ -141,7 +141,9 @@ int i2cbus_write(i2cbus *dev, const void *buf, ssize_t len)
     status = write(dev->fd, buf, len);
     if (status != len)
     {
+#ifdef I2C_DEBUG
         fprintf(stderr, "%s: Failed to write %ld bytes, wrote %d bytes\n", __func__, len, status);
+#endif
     }
     if (locked)
         pthread_mutex_unlock(dev->lock);
@@ -174,7 +176,9 @@ int i2cbus_read(i2cbus *dev, void *buf, ssize_t len)
     status = read(dev->fd, buf, len);
     if (status != len)
     {
+#ifdef I2C_DEBUG
         fprintf(stderr, "%s: Failed to read %ld bytes, read %d bytes\n", __func__, len, status);
+#endif
     }
     if (locked)
         pthread_mutex_unlock(dev->lock);
@@ -229,7 +233,9 @@ int i2cbus_xfer(i2cbus *dev,
     status = read(dev->fd, inbuf, inlen);
     if (status != inlen)
     {
+#ifdef I2C_DEBUG
         fprintf(stderr, "%s: Failed to read %d bytes, read %d bytes\n", __func__, inlen, status);
+#endif
     }
 #ifdef I2C_DEBUG
     eprintf("%s: Receiving %d bytes ->\n", __func__, inlen);
