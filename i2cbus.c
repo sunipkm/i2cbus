@@ -149,8 +149,13 @@ int i2cbus_close(i2cbus *dev)
     return -1;
 }
 
+#ifdef __GNUC__
 #define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
+#else
+#define likely(x) (x)
+#define unlikely(x) (x)
+#endif
 
 int i2cbus_write(i2cbus *dev, void *buf, int len)
 {
@@ -284,7 +289,7 @@ int i2cbus_lock(unsigned int bus)
 {
     if (unlikely(bus >= I2CBUS_MAX_NUM))
     {
-        eprintf("Bus index %d not supported, maximum is %d", I2CBUS_MAX_NUM - 1);
+        eprintf("Bus index %d not supported, maximum is %d", bus, I2CBUS_MAX_NUM - 1);
         return -100;
     }
     int ret = pthread_mutex_lock(&(i2cbus_locks[bus]));
@@ -297,7 +302,7 @@ int i2cbus_trylock(unsigned int bus)
 {
     if (unlikely(bus >= I2CBUS_MAX_NUM))
     {
-        eprintf("Bus index %d not supported, maximum is %d", I2CBUS_MAX_NUM - 1);
+        eprintf("Bus index %d not supported, maximum is %d", bus, I2CBUS_MAX_NUM - 1);
         return -100;
     }
     int ret = pthread_mutex_trylock(&(i2cbus_locks[bus]));
@@ -310,7 +315,7 @@ int i2cbus_unlock(unsigned int bus)
 {
     if (unlikely(bus >= I2CBUS_MAX_NUM))
     {
-        eprintf("Bus index %d not supported, maximum is %d", I2CBUS_MAX_NUM - 1);
+        eprintf("Bus index %d not supported, maximum is %d", bus, I2CBUS_MAX_NUM - 1);
         return -100;
     }
     int ret = pthread_mutex_unlock(&(i2cbus_locks[bus]));
