@@ -13,7 +13,6 @@
 #ifdef __cplusplus 
 extern "C" {
 #endif
-#include <stdio.h>
 #include <pthread.h>
 
 /**
@@ -22,16 +21,16 @@ extern "C" {
  */
 typedef struct
 {
-    int fd;                /// I2C device file descriptor
-    int id;                /// I2C device file id (X in /dev/i2cX)
-    pthread_mutex_t *lock; /// Lock corresponding to the /dev/i2cX file, assigned from the locks array indexed by id
+    int fd;                ///< I2C device file descriptor
+    int id;                ///< I2C device file id (X in /dev/i2c-X)
+    pthread_mutex_t *lock; ///< Lock corresponding to the /dev/i2c-X file, assigned from the locks array indexed by id
 } i2cbus;
 /**
  * @brief Open an I2C bus file descriptor using the supplied parameters.
  * 
  * 
  * @param dev i2c device descriptor
- * @param id i2c device file ID (X in /dev/i2cX)
+ * @param id i2c device file ID (X in /dev/i2c-X)
  * @param addr i2c slave address
  * @return int fd, non-negative on success, negative on error. See open() for details.
  */
