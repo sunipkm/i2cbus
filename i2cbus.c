@@ -12,14 +12,15 @@
 #include <pthread.h>
 #include "i2cbus.h"
 
-#define I2C_DEBUG
-
 #ifdef eprintf
 #undef eprintf
 #endif
 
-#define eprintf(str, ...) \
-    fprintf(stderr, "[%s/%s():%d] " str "\n", __FILE__, __func__, __LINE__, ##__VA_ARGS__)
+#define eprintf(str, ...)                                                                       \
+    {                                                                                           \
+        fprintf(stderr, "[%s/%s():%d] " str "\n", __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
+        fflush(stderr);                                                                         \
+    }
 
 static int i2clock_initd = 0; /// Indicate that the I2C bus has not been initialized
 
@@ -28,7 +29,7 @@ static int i2clock_initd = 0; /// Indicate that the I2C bus has not been initial
 #endif
 /**
  * @brief Set of mutexes for the I2C bus
- * 
+ *
  */
 pthread_mutex_t i2cbus_locks[I2CBUS_MAX_NUM];
 
